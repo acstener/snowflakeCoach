@@ -187,7 +187,7 @@ def config_sidebar():
         st.session_state.messages = []
 
 def main():
-    st.title("💬 Document Chat Assistant")
+    st.title("Chat with Andrew Huberman")
     
     # Initialize
     init_messages()
@@ -199,7 +199,7 @@ def main():
             st.markdown(message["content"])
     
     # Chat input
-    if question := st.chat_input("Ask about your documents..."):
+    if question := st.chat_input("Ask about health, nutrition or exercise..."):
         # Add user message
         st.session_state.messages.append({"role": "user", "content": question})
         with st.chat_message("user"):
