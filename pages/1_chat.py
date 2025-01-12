@@ -1,6 +1,5 @@
 # Moving our existing chat code here
 import streamlit as st
-from dotenv import load_dotenv
 from snowflake.snowpark.session import Session
 import os
 from snowflake.core import Root
@@ -57,31 +56,46 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# Load environment variables
-load_dotenv()
-
 # Constants
 NUM_CHUNKS = 3
 SLIDE_WINDOW = 7  # Number of previous conversations to remember
 
+# Validate Snowflake credentials
+required_snowflake_params = ["account", "user", "password", "role", "database", "schema", "warehouse"]
+missing_params = []
+
+for param in required_snowflake_params:
+    if not st.secrets.snowflake.get(param):
+        missing_params.append(param)
+
+if missing_params:
+    st.error(f"Missing required Snowflake credentials: {', '.join(missing_params)}")
+    st.info("Please add these credentials to your .streamlit/secrets.toml file or Streamlit Cloud secrets.")
+    st.stop()
+
 # Initialize session
 connection_params = {
-    "account": os.getenv("SNOWFLAKE_ACCOUNT"),
-    "user": os.getenv("SNOWFLAKE_USER"),
-    "password": os.getenv("SNOWFLAKE_USER_PASSWORD"),
-    "role": os.getenv("SNOWFLAKE_ROLE"),
-    "database": os.getenv("SNOWFLAKE_DATABASE"),
-    "schema": os.getenv("SNOWFLAKE_SCHEMA"),
-    "warehouse": os.getenv("SNOWFLAKE_WAREHOUSE")
+    "account": st.secrets.snowflake["account"],
+    "user": st.secrets.snowflake["user"],
+    "password": st.secrets.snowflake["password"],
+    "role": st.secrets.snowflake["role"],
+    "database": st.secrets.snowflake["database"],
+    "schema": st.secrets.snowflake["schema"],
+    "warehouse": st.secrets.snowflake["warehouse"]
 }
 
-session = Session.builder.configs(connection_params).create()
-root = Root(session)
+try:
+    session = Session.builder.configs(connection_params).create()
+    root = Root(session)
 
-# Get search service
-svc = root.databases[os.getenv("SNOWFLAKE_DATABASE")]\
-    .schemas[os.getenv("SNOWFLAKE_SCHEMA")]\
-    .cortex_search_services["CC_SEARCH_SERVICE_CS"]
+    # Get search service
+    svc = root.databases[st.secrets.snowflake["database"]]\
+        .schemas[st.secrets.snowflake["schema"]]\
+        .cortex_search_services["CC_SEARCH_SERVICE_CS"]
+except Exception as e:
+    st.error(f"Failed to connect to Snowflake: {str(e)}")
+    st.info("Please check your Snowflake credentials in .streamlit/secrets.toml")
+    st.stop()
 
 def init_messages():
     if "messages" not in st.session_state:
