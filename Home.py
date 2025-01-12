@@ -185,11 +185,14 @@ def main():
                 Our AI coaches are trained on hours of speech transcripts from the leading experts in all things health. 
                 Kick off the new year with personalized guidance.
             </p>
-            <a href="1_chat" class="primary-button">Start chat now</a>
         </div>
         """,
         unsafe_allow_html=True
     )
+    
+    # Replace HTML button with Streamlit button
+    if st.button("Start chat now", type="primary", use_container_width=False):
+        st.switch_page("pages/1_chat.py")
     
     # Add some space
     st.markdown("<br><br>", unsafe_allow_html=True)
@@ -208,26 +211,12 @@ def main():
                 <div class="expert-role">Stanford neuroscientist</div>
                 <div class="expert-name">Andrew Huberman</div>
                 <div class="expert-bio">Host of the Huberman Lab podcast. Expert in neuroscience and performance.</div>
-                <div style="margin-top: auto;">
-                    <a href="1_chat" style="
-                        display: inline-block;
-                        background: rgba(255, 255, 255, 0.05);
-                        border: 1px solid rgba(255, 255, 255, 0.1);
-                        color: white;
-                        padding: 0.75rem 1.5rem;
-                        border-radius: 8px;
-                        font-family: 'Inter', sans-serif;
-                        font-weight: 500;
-                        font-size: 0.875rem;
-                        text-decoration: none;
-                        transition: all 0.2s ease-in-out;
-                        min-width: 160px;
-                    ">Chat with Andrew</a>
-                </div>
             </div>
             """,
             unsafe_allow_html=True
         )
+        if st.button("Chat with Andrew", key="andrew_btn"):
+            st.switch_page("pages/1_chat.py")
     
     with col2:
         st.markdown(
@@ -238,26 +227,12 @@ def main():
                 <div class="expert-role">Tech entrepreneur turned biohacker</div>
                 <div class="expert-name">Bryan Johnson</div>
                 <div class="expert-bio">Known for Blueprint protocol and anti-aging techniques.</div>
-                <div style="margin-top: auto;">
-                    <a href="1_chat" style="
-                        display: inline-block;
-                        background: rgba(255, 255, 255, 0.05);
-                        border: 1px solid rgba(255, 255, 255, 0.1);
-                        color: white;
-                        padding: 0.75rem 1.5rem;
-                        border-radius: 8px;
-                        font-family: 'Inter', sans-serif;
-                        font-weight: 500;
-                        font-size: 0.875rem;
-                        text-decoration: none;
-                        transition: all 0.2s ease-in-out;
-                        min-width: 160px;
-                    ">Chat with Bryan</a>
-                </div>
             </div>
             """,
             unsafe_allow_html=True
         )
+        if st.button("Chat with Bryan", key="bryan_btn"):
+            st.switch_page("pages/1_chat.py")
     
     with col3:
         st.markdown(
@@ -268,26 +243,12 @@ def main():
                 <div class="expert-role">Biochemist and expert</div>
                 <div class="expert-name">Dr. Rhonda Patrick</div>
                 <div class="expert-bio">Specializes in aging, cancer, and nutrition research.</div>
-                <div style="margin-top: auto;">
-                    <a href="1_chat" style="
-                        display: inline-block;
-                        background: rgba(255, 255, 255, 0.05);
-                        border: 1px solid rgba(255, 255, 255, 0.1);
-                        color: white;
-                        padding: 0.75rem 1.5rem;
-                        border-radius: 8px;
-                        font-family: 'Inter', sans-serif;
-                        font-weight: 500;
-                        font-size: 0.875rem;
-                        text-decoration: none;
-                        transition: all 0.2s ease-in-out;
-                        min-width: 160px;
-                    ">Chat with Dr. Rhonda</a>
-                </div>
             </div>
             """,
             unsafe_allow_html=True
         )
+        if st.button("Chat with Dr. Rhonda", key="rhonda_btn"):
+            st.switch_page("pages/1_chat.py")
     
     st.markdown('</div>', unsafe_allow_html=True)
 
