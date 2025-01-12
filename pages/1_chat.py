@@ -9,8 +9,8 @@ import json
 # Set page config
 st.set_page_config(
     page_title="Chat with Expert",
-    initial_sidebar_state="expanded",
-    layout="wide"
+    layout="wide",
+    menu_items={} # This removes the menu with navigation
 )
 
 # Custom CSS for modern look
@@ -19,6 +19,27 @@ st.markdown(
     <style>
         /* Import Inter font */
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap');
+        
+        /* Hide ALL navigation elements */
+        .stApp > header {
+            display: none !important;
+        }
+        
+        /* Hide sidebar completely */
+        section[data-testid="stSidebar"] {
+            display: none !important;
+        }
+        
+        /* Hide navigation links */
+        .css-1d391kg, .css-1lsmgbg {
+            display: none !important;
+        }
+        
+        /* Model selector styling */
+        .model-selector {
+            max-width: 300px !important;
+            margin: 1rem auto !important;
+        }
         
         /* Apply Inter font to all elements */
         .stApp, .stMarkdown, p, h1, h2, h3, .stButton button, 
@@ -41,15 +62,6 @@ st.markdown(
         h1 {
             font-family: 'Inter', sans-serif !important;
             font-weight: 700 !important;
-        }
-        
-        /* Related documents styling */
-        .streamlit-expanderHeader {
-            font-family: 'Inter', sans-serif !important;
-        }
-        
-        .streamlit-expanderContent {
-            font-family: 'Inter', sans-serif !important;
         }
     </style>
     """,
@@ -104,9 +116,6 @@ def get_similar_chunks_search_service(query):
         filter_obj = {"@eq": {"category": st.session_state.category_value}}
         response = svc.search(query, ["chunk", "relative_path", "category"], 
                             filter=filter_obj, limit=NUM_CHUNKS)
-    
-    if st.session_state.debug:
-        st.sidebar.json(response.json())
     return response.json()
 
 def init_messages():
@@ -151,16 +160,16 @@ def create_prompt(question):
         chat_history = ""
 
     prompt = f"""
-        You are an expert chat assistant that extracts information from the CONTEXT provided
+        You are Dr. Andrew Huberman, a neuroscientist and professor at Stanford who extracts information from the scientific literature provided
         between <context> and </context> tags.
-        You offer a chat experience considering the information included in the CHAT HISTORY
+        You offer science-based protocols and mechanistic insights considering the information included in the CHAT HISTORY
         provided between <chat_history> and </chat_history> tags.
         When answering the question contained between <question> and </question> tags
-        be concise and do not hallucinate. 
-        If you don't have the information just say so.
+        be direct about the peer-reviewed evidence and cite specific mechanisms. 
+        If you don't have peer-reviewed research to support an answer, just say so.
         
         Do not mention the CONTEXT or CHAT HISTORY in your answer.
-        Only answer the question if you can extract it from the CONTEXT provided.
+        Only provide protocols and insights if they are supported by the research CONTEXT provided.
         
         <chat_history>
         {chat_history}
@@ -178,34 +187,38 @@ def create_prompt(question):
     relative_paths = set(item['relative_path'] for item in json_data['results'])
     return prompt, relative_paths
 
-def config_sidebar():
-    st.sidebar.selectbox('Select your model:', (
-        'mixtral-8x7b',
-        'snowflake-arctic',
-        'mistral-large',
-        'llama3-8b',
-        'llama3-70b',
-        'reka-flash',
-        'mistral-7b',
-        'llama2-70b-chat',
-        'gemma-7b'
-    ), key="model_name")
+def config_model_selector():
+    # Create three columns for centering
+    col1, col2, col3 = st.columns([1, 2, 1])
+    with col1:
+        st.selectbox('Select your model:', (
+            'mixtral-8x7b',
+            'snowflake-arctic',
+            'mistral-large',
+            'llama3-8b',
+            'llama3-70b',
+            'reka-flash',
+            'mistral-7b',
+            'llama2-70b-chat',
+            'gemma-7b'
+        ), key="model_name")
 
-    categories = session.sql("select category from docs_chunks_table group by category").collect()
-    cat_list = ['ALL'] + [cat.CATEGORY for cat in categories]
-    st.sidebar.selectbox('Select product category:', cat_list, key="category_value")
-
-    st.sidebar.checkbox('Remember chat history?', key="use_chat_history", value=True)
-    st.sidebar.checkbox('Debug mode', key="debug", value=False)
-    if st.sidebar.button("Clear Chat"):
-        st.session_state.messages = []
+    # Setting default values
+    if "use_chat_history" not in st.session_state:
+        st.session_state.use_chat_history = True
+    if "category_value" not in st.session_state:
+        st.session_state.category_value = "ALL"
 
 def main():
-    st.title("Chat with Andrew Huberman")
-    
     # Initialize
     init_messages()
-    config_sidebar()
+    
+    # Add model selector above title
+    config_model_selector()
+    
+    st.title("Chat with Huberman AI")
+    st.text("Powered by Snowflake Cortex and Streamlit 🚀")
+
     
     # Display chat history
     for message in st.session_state.messages:
@@ -222,23 +235,23 @@ def main():
         # Generate and display response
         with st.chat_message("assistant"):
             message_placeholder = st.empty()
-            with st.spinner(f"Thinking..."):
+            with st.spinner(f"Scanning the literature..."):
                 prompt, relative_paths = create_prompt(question)
                 cmd = "select snowflake.cortex.complete(?, ?) as response"
                 df_response = session.sql(cmd, params=[st.session_state.model_name, prompt]).collect()
                 response = df_response[0].RESPONSE
                 message_placeholder.markdown(response)
                 
-                # Show related documents
+                # Show related documents in a container below the message
                 if relative_paths != "None":
-                    with st.sidebar.expander("📄 Related Documents"):
+                    with st.expander("Further reading:"):
                         for path in relative_paths:
                             url_query = f"""
                             select GET_PRESIGNED_URL(@docs, '{path}', 360) as URL_LINK 
                             from directory(@docs)
                             """
                             url = session.sql(url_query).to_pandas().iloc[0]['URL_LINK']
-                            st.sidebar.markdown(f"[{path}]({url})")
+                            st.markdown(f"[{path}]({url})")
         
         # Save assistant response
         st.session_state.messages.append({"role": "assistant", "content": response})
