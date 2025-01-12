@@ -97,6 +97,18 @@ except Exception as e:
     st.info("Please check your Snowflake credentials in .streamlit/secrets.toml")
     st.stop()
 
+def get_similar_chunks_search_service(query):
+    if st.session_state.category_value == "ALL":
+        response = svc.search(query, ["chunk", "relative_path", "category"], limit=NUM_CHUNKS)
+    else:
+        filter_obj = {"@eq": {"category": st.session_state.category_value}}
+        response = svc.search(query, ["chunk", "relative_path", "category"], 
+                            filter=filter_obj, limit=NUM_CHUNKS)
+    
+    if st.session_state.debug:
+        st.sidebar.json(response.json())
+    return response.json()
+
 def init_messages():
     if "messages" not in st.session_state:
         st.session_state.messages = []
@@ -125,18 +137,6 @@ def summarize_conversation(chat_history, question):
     cmd = "select snowflake.cortex.complete(?, ?) as response"
     df_response = session.sql(cmd, params=[st.session_state.model_name, prompt]).collect()
     return df_response[0].RESPONSE.replace("'", "")
-
-def get_similar_chunks_search_service(query):
-    if st.session_state.category_value == "ALL":
-        response = svc.search(query, ["chunk", "relative_path", "category"], limit=NUM_CHUNKS)
-    else:
-        filter_obj = {"@eq": {"category": st.session_state.category_value}}
-        response = svc.search(query, ["chunk", "relative_path", "category"], 
-                            filter=filter_obj, limit=NUM_CHUNKS)
-    
-    if st.session_state.debug:
-        st.sidebar.json(response.json())
-    return response.json()
 
 def create_prompt(question):
     if st.session_state.use_chat_history:
